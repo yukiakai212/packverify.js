@@ -2,16 +2,18 @@
 
 Validate your npm package before publishing.
 
-`packverify` simulates how consumers install and load your published package. It packs your project, extracts the published archive into a temporary workspace, installs production dependencies, and validates that your package can be loaded successfully.
+`packverify` simulates how consumers install and load your published package. It packs your project, extracts the published archive into a temporary workspace, creates a temporary consumer project that depends on that tarball, installs it with npm, and validates that your package can be loaded successfully.
 
 ## Features
 
 * Validates the actual files that will be published.
+* Installs the packed tarball in a temporary consumer project.
 * Loads runtime entry points (`main`, `exports`, and optionally `bin`).
 * Verifies TypeScript declaration files exist.
 * Detects forbidden published files using glob patterns.
 * Supports packages with `exports`, `types`, `typings`, and `bin`.
 * Resolves glob-based entry declarations before validation.
+* Controls lifecycle scripts independently for the pack and install phases.
 * Automatically cleans up temporary files after validation.
 
 ## Installation
@@ -52,7 +54,13 @@ Skip runtime validation for executable `bin` entries:
 packverify validate --no-validate-bins
 ```
 
-Skip npm lifecycle scripts while installing dependencies:
+Skip lifecycle scripts triggered while packing:
+
+```bash
+packverify validate --ignore-pack-scripts
+```
+
+Skip lifecycle scripts while installing the packed package:
 
 ```bash
 packverify validate --ignore-install-scripts
@@ -72,20 +80,23 @@ packverify validate \
 
 ```text
 Project
-    │
-    ▼
+  |
+  v
 npm pack
-    │
-    ▼
+  |
+  v
 Extract published package
-    │
-    ▼
-Install production dependencies
-    │
-    ▼
-Validate runtime and package artifacts
-    │
-    ▼
+  |
+  v
+Create temporary consumer project
+  |
+  v
+Install the packed tarball with npm
+  |
+  v
+Validate package artifacts and installed runtime entries
+  |
+  v
 Cleanup
 ```
 
@@ -106,14 +117,33 @@ Executable `bin` entries are also validated by default and can be disabled with:
 packverify validate --no-validate-bins
 ```
 
-## Install scripts
+## Lifecycle scripts
 
-By default, dependency installation behaves like a normal npm installation, including lifecycle scripts.
+By default, `packverify` allows npm lifecycle scripts in both phases:
 
-If your package executes expensive or interactive install scripts, you can skip them:
+* `npm pack` runs its normal pack-related lifecycle scripts.
+* `npm install` runs lifecycle scripts while the packed tarball is installed into the temporary consumer project.
+
+The controls are independent.
+
+Skip scripts only during the pack phase:
+
+```bash
+packverify validate --ignore-pack-scripts
+```
+
+Skip scripts only during the install phase:
 
 ```bash
 packverify validate --ignore-install-scripts
+```
+
+Skip scripts in both phases:
+
+```bash
+packverify validate \
+  --ignore-pack-scripts \
+  --ignore-install-scripts
 ```
 
 ## Exit codes
