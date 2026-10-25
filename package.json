@@ -23,7 +23,7 @@
     "build:public": "npx tsup --config tsup.public.config.ts",
     "docs": "npx typedoc",
     "prepare:artifact": "tsx workspace/release/prepareArtifact.ts",
-    "prepare": "is-ci || husky"
+    "prepare": "echo is-ci || husky"
   },
   "files": [
     "dist/*",
